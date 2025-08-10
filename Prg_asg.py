@@ -346,5 +346,109 @@ def show_mine_map():
         print(row)
     print("+------------------------------+")
 
+#to enter the mine from Sundrop Town 
+def enter_mine():
+    from_mine()
+
+
+# Function to show the town menu and handle player actions
+def show_town_menu():
+    player["day"] += 1
+    sell_ore()
+    while True:
+        print(f"\nDAY {player['day']} ----- Sundrop Town -----")
+        print("(B)uy stuff")
+        print("See Player (I)nformation")
+        print("See Mine (M)ap")
+        print("(E)nter mine")
+        print("Sa(V)e game")
+        print("(H)igh scores")
+        print("(Q)uit to main menu")
+        print("------------------------")
+        choice = input("Your choice? ").strip().upper()
+        if choice == "B":
+            buy_stuff()
+        elif choice == "I":
+            show_player_info()
+        elif choice == "M":
+            show_mine_map()
+        elif choice == "E":
+            enter_mine()
+            return
+        elif choice == "V":
+            save_game()
+        elif choice == "H":
+            show_highscores()
+        elif choice == "Q":
+            break
+        else:
+            print("Enter B, I, M, E, V, H or Q.")
+
+
+
+# Function to display the current viewport of the mine based on player position and torch status
+def display_viewport():
+    x, y = player["position"]    #to set player position 
+    radius = 2 if player["has_torch"] else 1  #r=1 show 3x3 while r=2 show 5x5 
+    print(f"\nDAY {player['day']}")
+    print("+-----+" if radius == 2 else "+---+")
+    for dy in range(-radius, radius + 1):
+        row = "|"
+        for dx in range(-radius, radius + 1):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < MAP_WIDTH and 0 <= ny < MAP_HEIGHT:
+                if (nx, ny) == player["position"]:
+                    row += "M"
+                elif (nx, ny) == player["portal"]:
+                    row += "P"
+                else:
+                    row += game_map[ny][nx]
+            else:
+                row += "#"
+        row += "|"
+        print(row)
+    print("+-----+" if radius == 2 else "+---+")
+    print(f"Turns left: {player['turns']}   Load: {len(player['inventory'])}/{player['inventory_limit']}   Steps: {player['steps']}   Potions: {player['potions']}")
+    print("(WASD) to move")
+    print("(M)ap, (I)nformation, (P)ortal, (U)se potion, (Q)uit to main menu")
+
+
+
+# Check if the player can mine a specific mineral symbol based on their pickaxe level
+def can_mine_symbol(sym):  #chck if its valid symbol 
+    if sym not in mineral_symbols:
+        return False
+    ore = mineral_symbols[sym]
+    if ore == "copper":
+        return True
+    if ore == "silver":
+        return player["pickaxe"] >= 2
+    if ore == "gold":
+        return player["pickaxe"] >= 3
+    return False
+
+
+
+# Mine at the given (x, y) position if it contains a mineral tile
+def mine_at(x, y):
+    tile = game_map[y][x]
+    if tile in mineral_symbols:     #check if tile has mineral symbol
+        if not can_mine_symbol(tile):
+            print("Your pickaxe isn't strong enough to mine this yet!")
+            return
+        ore = mineral_symbols[tile]   #find ore type from symbol 
+        if len(player["inventory"]) >= player["inventory_limit"]:
+            print("You're carrying too much to mine more!")
+            return
+        low, high = ore_yield[ore]
+        amount = random.randint(low, high)
+        space = player["inventory_limit"] - len(player["inventory"])
+        collected = min(space, amount)
+        player["inventory"].extend([ore] * collected)
+        game_map[y][x] = " "
+        print(f"You mined {amount} {ore}... collected {collected}.")
+    else:
+        print("Nothing to mine here.")
+
 
 
