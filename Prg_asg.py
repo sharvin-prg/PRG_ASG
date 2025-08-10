@@ -452,3 +452,102 @@ def mine_at(x, y):
 
 
 
+
+#toggle player movement in the mine 
+def move_player(dx, dy):
+    x, y = player["position"]
+    nx, ny = x + dx, y + dy   #Calculate the new position after moving by (dx, dy)
+    if 0 <= nx < MAP_WIDTH and 0 <= ny < MAP_HEIGHT:   #check if postion is within map bounds 
+
+        #If moving onto an ore tile while backpack is full, block the move
+        if game_map[ny][nx] in mineral_symbols and len(player["inventory"]) >= player["inventory_limit"]: 
+            print("Backpack full! Can't move onto a mineral tile.")
+            return
+        player["position"] = (nx, ny)   #update player new position
+        player["steps"] += 1
+        player["turns"] -= 1
+        clear_fog_around(nx, ny)
+        mine_at(nx, ny)
+        if player["turns"] <= 0:
+            print("You're exhausted... using portal to return to town.")
+            use_portal()
+    else:
+        print("You can't go that way!")
+
+
+
+#setting player portal position to return to town 
+def use_portal():
+    player["portal"] = player["position"]
+    print("You used the portal stone to return to town.")
+    show_town_menu()
+
+
+
+# Use a potion to restore 5 turns in the mine
+def use_potion():
+    if player["potions"] <= 0:  #when potion is used or not bought yet
+        print("You don't have any potions.")
+        return
+    player["potions"] -= 1
+    player["turns"] += 5
+    print("You drink a Stamina Potion. (+5 turns)")
+
+
+
+# Function to handle the main loop of the mine 
+def from_mine():
+    if player["portal"]:
+        player["position"] = player["portal"]
+    else:
+        player["position"] = (0, 0)
+    player["turns"] = TURNS_PER_DAY
+    clear_fog_around(*player["position"])
+    while True:
+        display_viewport()
+        action = input("Action? ").strip().upper()
+        if action == "W":
+            move_player(0, -1)
+        elif action == "S":
+            move_player(0, 1)
+        elif action == "A":
+            move_player(-1, 0)
+        elif action == "D":
+            move_player(1, 0)
+        elif action == "U":
+            use_potion()
+        elif action == "M":
+            show_mine_map()
+        elif action == "I":
+            show_player_info()
+        elif action == "P":
+            use_portal()
+            break
+        elif action == "Q":
+            print("Returning to town...")
+            show_town_menu()
+            break
+        else:
+            print("Use WASD, M, I, U, P or Q.")
+
+
+
+#function to handle the main menu
+def main():
+    while True:
+        choice = main_menu()
+        if choice == "N":
+            start_new_game()
+        elif choice == "L":
+            load_saved_game()
+        elif choice == "H":
+            show_highscores()
+        elif choice == "Q":
+            print("Thanks for playing Sundrop Caves!")
+            break
+
+
+# Entry point of the game (Start the game only if this file is run directly)
+if __name__ == "__main__":
+    main()
+
